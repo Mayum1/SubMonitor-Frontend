@@ -49,17 +49,11 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
 }) => {
   const { t } = useTranslation();
   
-  const [wantsReminders, setWantsReminders] = useState(false);
+  const [wantsReminders, setWantsReminders] = useState(true);
+  const [reminders, setReminders] = useState<Reminder[]>([
+    { daysBefore: 3, timeOfDay: '09:00', isEnabled: true }
+  ]);
 
-  // Reminder fields state
-  const [reminder, setReminder] = useState<Reminder>({
-    daysBefore: 3,
-    timeOfDay: '09:00',
-    isEnabled: true,
-  });
-
-  const [daysBeforeInput, setDaysBeforeInput] = useState(reminder.daysBefore.toString());
-  
   // Create schema for form validation
   const schema = z.object({
     name: z.string().min(1, { message: t('auth.requiredField') }),
@@ -137,25 +131,35 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     try {
       if (!userId) throw new Error('User not authenticated');
       const payload: SubscriptionWithReminderRequest = {
-      title: data.name,
-      price: parseFloat(data.amount),
-      currency: data.currency,
-      firstPaymentDate: data.startDate,
-      billingPeriodValue: parseInt(data.billingPeriodValue, 10),
-      billingPeriodUnit: data.billingPeriodUnit,
-        autoRenew: data.autoRenew ?? true,
-      subscriptionCategory: data.category,
+        title: data.name,
+        price: parseFloat(data.amount),
+        currency: data.currency,
+        firstPaymentDate: data.startDate,
+        billingPeriodValue: Number(data.billingPeriodValue),
+        billingPeriodUnit: data.billingPeriodUnit as 'MONTH' | 'YEAR' | 'DAY',
+        autoRenew: !!data.autoRenew,
+        subscriptionCategory: data.category,
         serviceId: data.serviceId,
         ...(wantsReminders ? {
-          reminder: {
-            daysBefore: reminder.daysBefore,
-            timeOfDay: reminder.timeOfDay,
+          reminders: reminders.map(r => ({
+            daysBefore: Number(r.daysBefore),
+            timeOfDay: r.timeOfDay,
             isEnabled: true,
-          }
+          }))
         } : {}),
       };
       await subscriptionService.createWithReminder(payload, userId);
-      setFormSuccess(t('subscriptions.created', 'Subscription created successfully'));
+      onSubmit({
+        name: data.name,
+        amount: data.amount,
+        currency: data.currency,
+        billingPeriodValue: data.billingPeriodValue,
+        billingPeriodUnit: data.billingPeriodUnit,
+        category: data.category,
+        startDate: data.startDate,
+        autoRenew: !!data.autoRenew,
+        serviceId: data.serviceId,
+      });
     } catch (error: any) {
       setFormError(error?.message || 'Error creating subscription');
     }
@@ -209,14 +213,8 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     return { value: `${hour}:00`, label: `${hour}:00` };
   });
   
-  useEffect(() => {
-    if (wantsReminders) {
-      setDaysBeforeInput(reminder.daysBefore.toString());
-    }
-  }, [wantsReminders, reminder.daysBefore]);
-  
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(handleFormSubmit as any)} className="space-y-4">
       <Input
         id="name"
         label={t('subscriptions.name')}
@@ -258,6 +256,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
           label={t('subscriptions.billingPeriodUnit')}
           options={billingPeriodUnitOptions}
           {...register('billingPeriodUnit')}
+          value={String((defaultValues?.billingPeriodUnit ?? 'MONTH'))}
           error={errors.billingPeriodUnit?.message}
         />
       </div>
@@ -309,43 +308,62 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
       </div>
       
       {wantsReminders && (
-        <div className="border rounded p-4 bg-slate-50 dark:bg-slate-800">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="reminder-daysBefore" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t('subscriptions.reminderDaysBefore', 'За сколько дней до оплаты')}
-        </label>
-              <input
-                id="reminder-daysBefore"
-                type="number"
-                min={1}
-                className="mt-1 block w-full rounded border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                value={daysBeforeInput}
-                onChange={e => {
-                  const val = e.target.value;
-                  setDaysBeforeInput(val);
-                  const num = Number(val);
-                  if (!isNaN(num) && num >= 1) {
-                    setReminder(r => ({ ...r, daysBefore: num }));
-                  }
-                }}
-      />
+        <div className="space-y-4">
+          {reminders.map((rem, idx) => (
+            <div key={idx} className="border rounded p-4 bg-slate-50 dark:bg-slate-800 relative">
+              {reminders.length > 1 && (
+                <button
+                  type="button"
+                  className="absolute top-2 right-2 text-slate-400 hover:text-red-500"
+                  onClick={() => setReminders(reminders.filter((_, i) => i !== idx))}
+                  aria-label="Удалить напоминание"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor={`reminder-daysBefore-${idx}`} className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {t('subscriptions.reminderDaysBefore', 'За сколько дней до оплаты')}
+                  </label>
+                  <input
+                    id={`reminder-daysBefore-${idx}`}
+                    type="number"
+                    min={1}
+                    className="mt-1 block w-full rounded border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    value={String(rem.daysBefore)}
+                    onChange={e => {
+                      const num = Number(e.target.value);
+                      setReminders(reminders.map((r, i) => i === idx ? { ...r, daysBefore: num } : r));
+                    }}
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`reminder-timeOfDay-${idx}`} className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {t('subscriptions.reminderTimeOfDay', 'Время напоминания')}
+                  </label>
+                  <select
+                    id={`reminder-timeOfDay-${idx}`}
+                    className="mt-1 block w-full rounded border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    value={String(rem.timeOfDay)}
+                    onChange={e => setReminders(reminders.map((r, i) => i === idx ? { ...r, timeOfDay: e.target.value } : r))}
+                  >
+                    {hourOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-            <div>
-              <label htmlFor="reminder-timeOfDay" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t('subscriptions.reminderTimeOfDay', 'Время напоминания')}
-              </label>
-              <select
-                id="reminder-timeOfDay"
-                className="mt-1 block w-full rounded border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                value={reminder.timeOfDay}
-                onChange={e => setReminder(r => ({ ...r, timeOfDay: e.target.value }))}
-              >
-                {hourOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
+          ))}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className="flex items-center px-3 py-1 rounded bg-primary-100 text-primary-700 hover:bg-primary-200 text-sm font-medium"
+              onClick={() => setReminders([...reminders, { daysBefore: 3, timeOfDay: '09:00', isEnabled: true }])}
+            >
+              + {t('subscriptions.addReminder', 'Добавить напоминание')}
+            </button>
           </div>
         </div>
       )}
@@ -355,12 +373,6 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
           {formError}
         </div>
         )}
-      
-      {formSuccess && (
-        <div className="text-green-500">
-          {formSuccess}
-      </div>
-      )}
       
       <div className="flex justify-end space-x-3 pt-2">
         <Button

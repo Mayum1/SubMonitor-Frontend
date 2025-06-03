@@ -28,7 +28,6 @@ const MostExpensiveBarChart: React.FC<MostExpensiveBarChartProps> = ({ data, tit
     const { x, y, width, value, index } = props;
     const idx = typeof index === 'number' ? index : 0;
     const barValue = data[idx]?.value ?? 0;
-    const formatted = data[idx]?.formatted ?? value;
     // If bar is more than 70% of max, put label inside bar, else outside
     const isLong = barValue > 0.7 * maxValue;
     const xNum = typeof x === 'number' ? x : Number(x) || 0;
@@ -37,6 +36,7 @@ const MostExpensiveBarChart: React.FC<MostExpensiveBarChartProps> = ({ data, tit
     const labelX = isLong ? xNum + widthNum - 8 : xNum + widthNum + 8;
     const labelColor = isLong ? '#fff' : '#0f172a';
     const textAnchor = isLong ? 'end' : 'start';
+    // Always use valueFormatter for label
     return (
       <text
         x={labelX}
@@ -47,7 +47,7 @@ const MostExpensiveBarChart: React.FC<MostExpensiveBarChartProps> = ({ data, tit
         textAnchor={textAnchor}
         alignmentBaseline="middle"
       >
-        {formatted}
+        {valueFormatter ? valueFormatter(barValue) : barValue}
       </text>
     );
   };
@@ -58,46 +58,55 @@ const MostExpensiveBarChart: React.FC<MostExpensiveBarChartProps> = ({ data, tit
       {highlightName && (
         <div className="text-slate-900 dark:text-white text-2xl font-bold mb-2">{highlightName}</div>
       )}
-      <ResponsiveContainer width="100%" height={90 + 40 * data.length}>
-        <BarChart
-          layout="vertical"
-          data={data}
-          margin={{ top: 10, right: 40, left: 0, bottom: 10 }}
-          barCategoryGap={20}
-        >
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-          <XAxis
-            type="number"
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: '#64748b', fontSize: 14 }}
-            tickFormatter={valueFormatter}
-          />
-          <YAxis
-            dataKey="name"
-            type="category"
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: '#0f172a', fontSize: 16, fontWeight: 500 }}
-            width={140}
-          />
-          <Tooltip
-            cursor={{ fill: '#f1f5f9', opacity: 0.5 }}
-            contentStyle={{ background: '#fff', border: 'none', borderRadius: 8, color: '#0f172a' }}
-            formatter={valueFormatter}
-          />
-          <Bar dataKey="value" radius={[8, 8, 8, 8]} fill={barColor} barSize={28}>
-            <LabelList
-              dataKey="formatted"
-              content={renderCustomLabel}
+      {(!data || data.length === 0) ? (
+        <div className="flex flex-col items-center justify-center h-32 text-slate-400">
+          <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" /><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8M12 8v8" /></svg>
+          <div>{t('dashboard.noSpendingData', 'Нет данных для отображения')}</div>
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={90 + 40 * data.length}>
+          <BarChart
+            layout="vertical"
+            data={data}
+            margin={{ top: 10, right: 40, left: 0, bottom: 10 }}
+            barCategoryGap={20}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+            <XAxis
+              type="number"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#64748b', fontSize: 14 }}
+              tickFormatter={valueFormatter}
             />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-      <div className="flex justify-between text-slate-400 text-xs mt-2">
-        <span>{valueFormatter ? valueFormatter(0) : '0'}{unit && ` ${unit}`}</span>
-        <span>{unit && t('common.' + unit, unit)}</span>
-      </div>
+            <YAxis
+              dataKey="name"
+              type="category"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#0f172a', fontSize: 16, fontWeight: 500 }}
+              width={140}
+            />
+            <Tooltip
+              cursor={{ fill: '#f1f5f9', opacity: 0.5 }}
+              contentStyle={{ background: '#fff', border: 'none', borderRadius: 8, color: '#0f172a' }}
+              formatter={valueFormatter}
+            />
+            <Bar dataKey="value" radius={[8, 8, 8, 8]} fill={barColor} barSize={28}>
+              <LabelList
+                dataKey="value"
+                content={renderCustomLabel}
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+      {data && data.length > 0 && (
+        <div className="flex justify-between text-slate-400 text-xs mt-2">
+          <span>{valueFormatter ? valueFormatter(0) : '0'}{unit && ` ${unit}`}</span>
+          <span>{unit && t('common.' + unit, unit)}</span>
+        </div>
+      )}
     </div>
   );
 };

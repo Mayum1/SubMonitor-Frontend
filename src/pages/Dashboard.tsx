@@ -141,7 +141,6 @@ const Dashboard: React.FC = () => {
   interface ChartDataItem {
     month?: string;
     year?: number;
-    month?: number;
     totalSpending?: number;
     amount?: number;
     category?: string;
@@ -201,10 +200,10 @@ const Dashboard: React.FC = () => {
             <CreditCard className="h-8 w-8 text-white opacity-80" />
           </div>
           <p className="mt-4 text-3xl font-semibold">
-            {formatCurrency(summary?.totalMonthlySpending ?? totalMonthly, currency, summary?.currency || 'RUB', rates)}
+            {formatCurrency(summary?.totalMonthlySpending ?? totalMonthly, currency, 'RUB', rates)}
           </p>
           <p className="mt-1 text-sm text-primary-100">
-            {t('dashboard.annualSpending')}: {formatCurrency((summary?.totalMonthlySpending ?? totalMonthly) * 12, currency, summary?.currency || 'RUB', rates)}
+            {t('dashboard.annualSpending')}: {formatCurrency((summary?.totalMonthlySpending ?? totalMonthly) * 12, currency, 'RUB', rates)}
           </p>
         </Card>
         
@@ -244,10 +243,10 @@ const Dashboard: React.FC = () => {
             </h3>
             <Clock className="h-8 w-8 text-white opacity-80" />
           </div>
-          <p className="mt-4 text-3xl font-semibold">{summary?.upcomingReminders?.length ?? upcomingRenewals.length}</p>
-          {summary?.upcomingReminders && summary.upcomingReminders.length > 0 && (
+          <p className="mt-4 text-3xl font-semibold">{upcomingRenewals.length}</p>
+          {upcomingRenewals.length > 0 && (
             <p className="mt-1 text-sm text-accent-100">
-              {t('dashboard.next')}: {summary.upcomingReminders[0]?.subscription?.title ?? ''} {summary.upcomingReminders[0]?.subscription?.nextPaymentDate ? `(${format(new Date(summary.upcomingReminders[0].subscription.nextPaymentDate), 'PPP', { locale: i18n.language === 'ru' ? ru : enUS })})` : ''}
+              {t('dashboard.next')}: {upcomingRenewals[0]?.title ?? ''} {upcomingRenewals[0]?.nextPaymentDate ? `(${format(new Date(upcomingRenewals[0].nextPaymentDate), 'PPP', { locale: i18n.language === 'ru' ? ru : enUS })})` : ''}
             </p>
           )}
         </Card>
@@ -266,7 +265,7 @@ const Dashboard: React.FC = () => {
           ) : (
             <SpendingChart 
               data={spendingChartData} 
-              originalCurrency={summary?.currency || 'RUB'} 
+              originalCurrency="RUB" 
             />
           )}
         </Card>
@@ -282,7 +281,7 @@ const Dashboard: React.FC = () => {
           ) : (
             <CategoryChart 
               data={categoryChartData} 
-              originalCurrency={summary?.currency || 'RUB'} 
+              originalCurrency="RUB" 
             />
           )}
         </Card>
@@ -294,18 +293,18 @@ const Dashboard: React.FC = () => {
           <div className="h-32 flex items-center justify-center">
             <p>{t('common.loading')}</p>
           </div>
-        ) : summary?.upcomingReminders && summary.upcomingReminders.length > 0 ? (
+        ) : upcomingRenewals.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {summary.upcomingReminders.map((reminder) => (
-              <div key={reminder.id} className="p-4 bg-white dark:bg-slate-800 rounded shadow">
+            {upcomingRenewals.map((sub) => (
+              <div key={sub.id} className="p-4 bg-white dark:bg-slate-800 rounded shadow">
                 <div className="font-semibold text-lg mb-1">
-                  {reminder.subscription?.title || t('subscriptions.unknown')}
+                  {sub.title || t('subscriptions.unknown')}
                 </div>
                 <div className="text-slate-600 dark:text-slate-400 mb-1">
-                  {reminder.subscription?.nextPaymentDate ? `${t('subscriptions.nextPayment')}: ${format(new Date(reminder.subscription.nextPaymentDate), 'PPP', { locale: i18n.language === 'ru' ? ru : enUS })}` : ''}
+                  {sub.nextPaymentDate ? `${t('subscriptions.nextPayment')}: ${format(new Date(sub.nextPaymentDate), 'PPP', { locale: i18n.language === 'ru' ? ru : enUS })}` : ''}
                 </div>
                 <div className="text-slate-900 dark:text-white font-bold">
-                  {reminder.subscription?.price ? `${reminder.subscription.price} ${reminder.subscription.currency || ''}` : ''}
+                  {sub.price ? `${sub.price} ${sub.currency || ''}` : ''}
                 </div>
               </div>
             ))}
@@ -332,7 +331,6 @@ const Dashboard: React.FC = () => {
         {selectedSubscription && (
           <SubscriptionForm
             subscription={selectedSubscription}
-            categories={categories}
             onSubmit={handleEditSubscription}
             onCancel={() => {
               setIsEditModalOpen(false);

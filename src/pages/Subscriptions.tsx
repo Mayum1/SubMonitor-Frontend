@@ -117,6 +117,12 @@ const Subscriptions: React.FC = () => {
     sub.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // For creation modal: close on successful submit
+  const handleCreateSubmit = async () => {
+    setEditModalOpen(false);
+    setEditingSubscription(null);
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -219,7 +225,7 @@ const Subscriptions: React.FC = () => {
       >
         <SubscriptionForm
           subscription={editingSubscription || undefined}
-          onSubmit={handleEditSubmit}
+          onSubmit={editingSubscription ? handleEditSubmit : handleCreateSubmit}
           onCancel={handleEditCancel}
         />
       </Modal>

@@ -188,7 +188,18 @@
     "gbp": "GBP",
     "rub": "RUB",
     "savedSuccessfully": "Настройки успешно сохранены",
-    "passwordChanged": "Пароль успешно изменен"
+    "passwordChanged": "Пароль успешно изменен",
+    "defaultCurrency": "Валюта по умолчанию",
+    "defaultTimezone": "Часовой пояс по умолчанию",
+    "generateTelegramCode": "Сгенерировать код Telegram",
+    "saveSettings": "Сохранить настройки",
+    "telegramSectionInfo": "Чтобы получать уведомления в Telegram, сгенерируйте код и отправьте его нашему боту.",
+    "openTelegramBot": "Открыть Telegram-бота",
+    "codeLabel": "Код:",
+    "copy": "Скопировать",
+    "unlinkTelegram": "Отключить Telegram",
+    "confirmUnlinkTelegram": "Вы уверены, что хотите отключить Telegram?",
+    "telegramUnlinked": "Telegram успешно отключён."
   },
   "history": {
     "title": "История",

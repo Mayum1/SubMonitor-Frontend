@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import api from '../../services/api';
 import { ApiResponse, UserSettings } from '../../types';
 import { fetchRates, SUPPORTED_CURRENCIES, CurrencyRates } from '../../services/currencyService';
+import { updateUserSettings, fetchUserSettings } from '../../services/api';
 
 const loadSettings = (): UserSettings => {
   try {
@@ -13,6 +14,7 @@ const loadSettings = (): UserSettings => {
           renewalNotificationDays: 3,
           notifyOnPriceChange: true,
           defaultCurrency: 'USD',
+          defaultTimezone: 'Europe/Moscow',
           theme: 'light',
         };
   } catch (error) {
@@ -22,6 +24,7 @@ const loadSettings = (): UserSettings => {
       renewalNotificationDays: 3,
       notifyOnPriceChange: true,
       defaultCurrency: 'USD',
+      defaultTimezone: 'Europe/Moscow',
       theme: 'light',
     };
   }
@@ -46,10 +49,19 @@ const initialState: SettingsState = {
 // Async thunks
 export const fetchSettings = createAsyncThunk(
   'settings/fetch',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
     try {
-      const response = await api.get<ApiResponse<UserSettings>>('/settings');
-      return response.data.data;
+      const state = getState() as any;
+      const userId = state.auth.user?.id;
+      if (!userId) throw new Error('User not authenticated');
+      const response = await fetchUserSettings(userId);
+      // Use defaultCurrency and defaultTimezone from user object
+      return {
+        ...state.settings.settings,
+        defaultCurrency: response.data.defaultCurrency,
+        defaultTimezone: response.data.defaultTimezone,
+        isTelegramLinked: response.data.isTelegramLinked,
+      };
     } catch (error: unknown) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch settings');
     }
@@ -58,10 +70,14 @@ export const fetchSettings = createAsyncThunk(
 
 export const updateSettings = createAsyncThunk(
   'settings/update',
-  async (settings: Partial<UserSettings>, { rejectWithValue }) => {
+  async (settings: Partial<UserSettings>, { getState, rejectWithValue }) => {
     try {
-      const response = await api.put<ApiResponse<UserSettings>>('/settings', settings);
-      return response.data.data;
+      const state = getState() as any;
+      const userId = state.auth.user?.id;
+      if (!userId) throw new Error('User not authenticated');
+      await updateUserSettings(userId, settings);
+      // Return the new settings for Redux/localStorage
+      return { ...state.settings.settings, ...settings };
     } catch (error: unknown) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to update settings');
     }
@@ -109,6 +125,7 @@ const settingsSlice = createSlice({
     builder.addCase(fetchSettings.fulfilled, (state, action) => {
       state.isLoading = false;
       state.settings = action.payload;
+      state.currency = action.payload.defaultCurrency;
       localStorage.setItem('userSettings', JSON.stringify(action.payload));
     });
     builder.addCase(fetchSettings.rejected, (state, action) => {

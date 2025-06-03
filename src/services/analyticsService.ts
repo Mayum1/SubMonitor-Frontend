@@ -8,6 +8,12 @@ interface AnalyticsSummary {
   totalAnnual: number;
 }
 
+export interface BarChartItem {
+  name: string;
+  value: number;
+  formatted: string;
+}
+
 export const analyticsService = {
   async getSummary(userId: number): Promise<ApiResponse<AnalyticsSummary>> {
     const response = await api.get<ApiResponse<AnalyticsSummary>>(`/analytics/summary/user/${userId}`);
@@ -28,6 +34,26 @@ export const analyticsService = {
     const response = await api.get(`/analytics/export/user/${userId}?format=${format}`, {
       responseType: 'blob',
     });
+    return response.data;
+  },
+
+  async getMostExpensive(userId: number): Promise<BarChartItem[]> {
+    const response = await api.get<BarChartItem[]>(`/analytics/most-expensive/user/${userId}`);
+    return response.data;
+  },
+
+  async getLongest(userId: number): Promise<BarChartItem[]> {
+    const response = await api.get<BarChartItem[]>(`/analytics/longest/user/${userId}`);
+    return response.data;
+  },
+
+  async getMostFundsSpent(userId: number): Promise<BarChartItem[]> {
+    const response = await api.get<BarChartItem[]>(`/analytics/most-funds-spent/user/${userId}`);
+    return response.data;
+  },
+
+  async getYearlySpending(userId: number): Promise<number> {
+    const response = await api.get<number>(`/analytics/yearly-spending/user/${userId}`);
     return response.data;
   },
 };

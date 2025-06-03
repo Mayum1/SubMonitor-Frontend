@@ -164,7 +164,9 @@ export interface UserSettings {
   renewalNotificationDays: number;
   notifyOnPriceChange: boolean;
   defaultCurrency: string;
+  defaultTimezone: string;
   theme: 'light' | 'dark' | 'system';
+  isTelegramLinked?: boolean;
 }
 
 export interface SettingsState {

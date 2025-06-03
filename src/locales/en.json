@@ -188,7 +188,15 @@
     "gbp": "GBP",
     "rub": "RUB",
     "savedSuccessfully": "Settings saved successfully",
-    "passwordChanged": "Password changed successfully"
+    "passwordChanged": "Password changed successfully",
+    "defaultCurrency": "Default Currency",
+    "defaultTimezone": "Default Timezone",
+    "generateTelegramCode": "Generate Telegram Code",
+    "saveSettings": "Save Settings",
+    "telegramSectionInfo": "To receive notifications in Telegram, generate a code and send it to our bot.",
+    "openTelegramBot": "Open Telegram Bot",
+    "codeLabel": "Code:",
+    "copy": "Copy"
   },
   "history": {
     "title": "History",
@@ -218,5 +226,10 @@
     "finance": "Finance",
     "transport": "Transport",
     "other": "Other"
+  },
+  "telegram": {
+    "unlinkTelegram": "Unlink Telegram",
+    "confirmUnlinkTelegram": "Are you sure you want to unlink your Telegram account?",
+    "telegramUnlinked": "Telegram account unlinked successfully."
   }
 }

@@ -49,4 +49,13 @@ api.interceptors.response.use(
   }
 );
 
+export const updateUserSettings = (userId: number, settings: { defaultCurrency?: string; defaultTimezone?: string }) =>
+  api.put(`/users/${userId}/settings`, settings);
+
+export const fetchUserSettings = (userId: number) =>
+  api.get(`/users/${userId}`);
+
+export const unlinkTelegram = (userId: number) =>
+  api.delete(`/telegram-links/${userId}`);
+
 export default api;
